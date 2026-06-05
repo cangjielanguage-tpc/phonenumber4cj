@@ -1,7 +1,3 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2022-2024. All rights resvered.
- */
-
 /**
  * @file The file declars the PrefixFileReader class.
  */
@@ -10,19 +6,72 @@ package phonenumber4cj.prefixmapper
 
 import std.process.*
 
+@When[os == "Windows"]
+func getFilePath(): Path {
+    let curProcess = Process.current
+    match(curProcess.getEnv("PATH")) {
+        case Some(str) =>
+            if (str.isEmpty()) {
+                throw NoneValueException("")
+            }
+            let paths: Array<String> = str.split(";")
+            for (path in paths where 
+                (path.contains("target\\phonenumber4cj") ||
+                 path.contains("target\\release\\phonenumber4cj")) &&
+                 path.endsWith("phonenumber4cj") &&
+                 exists(path)
+            ) {
+                return Path(path)
+            }
+            throw NoneValueException("")
+        case None =>
+            throw NoneValueException("")
+    }
+}
+
+@When[os == "Linux"]
 func getFilePath(): Path {
     let curProcess = Process.current
     match(curProcess.getEnv("LD_LIBRARY_PATH")) {
         case Some(str) =>
-            if (str.isEmpty() && str.size < 0 && !str.contains(":")) {
+            if (str.isEmpty()) {
                 throw NoneValueException("")
             }
             let paths: Array<String> = str.split(":")
-            for (path in paths where (path.contains("target/phonenumber4cj") || path.contains("target/release/phonenumber4cj")) && path.endsWith("phonenumber4cj") && exists(path)) {
+            for (path in paths where 
+                (path.contains("target/phonenumber4cj") ||
+                 path.contains("target/release/phonenumber4cj")) &&
+                 path.endsWith("phonenumber4cj") &&
+                 exists(path)
+            ) {
                 return Path(path)
             }
             throw NoneValueException("")
-        case None => throw NoneValueException("")
+        case None =>
+            throw NoneValueException("")
+    }
+}
+
+@When[os == "macOS"]
+func getFilePath(): Path {
+    let curProcess = Process.current
+    match(curProcess.getEnv("DYLD_LIBRARY_PATH")) {
+        case Some(str) =>
+            if (str.isEmpty()) {
+                throw NoneValueException("")
+            }
+            let paths: Array<String> = str.split(":")
+            for (path in paths where 
+                (path.contains("target/phonenumber4cj") ||
+                 path.contains("target/release/phonenumber4cj")) &&
+                 path.endsWith("phonenumber4cj") &&
+                 exists(path)
+            ) {
+                return Path(path)
+            }
+            throw NoneValueException("")
+        case None =>
+            throw NoneValueException("")
     }
 }
 
@@ -59,6 +108,7 @@ public class PrefixFileReader {
             }
             readArrs = File.readFrom(eventDataPath)
             metadata = unsafe{ String.fromUtf8Unchecked(readArrs) }
+            metadata = metadata.replace("\r\n", "\n").replace("\r", "\n")
             return findCarrierRes(phonePrefix, metadata, nationalNumber, language)
         } else {
             if (phonePrefix == 1) {
@@ -77,6 +127,7 @@ public class PrefixFileReader {
             }
             readArrs = File.readFrom(eventDataPath)
             metadata = unsafe{ String.fromUtf8Unchecked(readArrs) }
+            metadata = metadata.replace("\r\n", "\n").replace("\r", "\n")
             return findCarrierRes(phonePrefix, metadata, nationalNumber, language)
         }
     }
@@ -100,6 +151,7 @@ public class PrefixFileReader {
             }
             readArrs = File.readFrom(eventDataPath)
             metadata = unsafe{ String.fromUtf8Unchecked(readArrs) }
+            metadata = metadata.replace("\r\n", "\n").replace("\r", "\n")
             return findGeoRes(phonePrefix, metadata, nationalNumber, language)
         } else {
             if (phonePrefix == 1) {
@@ -118,6 +170,7 @@ public class PrefixFileReader {
             }
             readArrs = File.readFrom(eventDataPath)
             metadata = unsafe{ String.fromUtf8Unchecked(readArrs) }
+            metadata = metadata.replace("\r\n", "\n").replace("\r", "\n")
             return findGeoRes(phonePrefix, metadata, nationalNumber, language)
         }
     }
@@ -136,6 +189,7 @@ public class PrefixFileReader {
             }
             readArrs = File.readFrom(eventDataPath)
             data = unsafe{ String.fromUtf8Unchecked(readArrs) }
+            data = data.replace("\r\n", "\n").replace("\r", "\n")
             return findTzRes(phonePrefix, data, number)
         } else {
             arrs = DEFAULT_TZ_PATH_ALL
@@ -144,6 +198,7 @@ public class PrefixFileReader {
             }
             readArrs = File.readFrom(eventDataPath)
             data = unsafe{ String.fromUtf8Unchecked(readArrs) }
+            data = data.replace("\r\n", "\n").replace("\r", "\n")
             return findTzRes(phonePrefix, data, number)
         }
 
